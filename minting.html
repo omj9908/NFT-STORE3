@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head> 
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT 민팅</title>
+    <style>
+        /* 헤더 */
+        header {
+            width:100%;
+            height: 80px;
+        }
+
+        header > div {
+            text-align:center;
+            padding-top:20px;
+            font-family:'Merienda', cursive;
+            font-size: 40px;
+            font-weight: bold;
+            color: black;
+        }
+
+        /* 푸터 */
+        footer {   
+            width: 100%;
+            height: 100px;
+            border-top: 2px double black;
+        }
+
+        footer > div {
+            text-align:center;
+            font-family:'Times New Roman';
+            font-size: 12px;
+            padding: 15px;
+        }
+    </style>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Web3.js -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+</head>
+<body>
+
+<header class="bg-info">
+    <div>NFT 민팅</div>
+</header>
+
+<main>  
+    <nav class="navbar navbar-expand-md bg-info">
+        <div class="container my-0">
+            <a class="navbar-brand" href="#">NFT</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#myMenuTop">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="myMenuTop">
+                <ul class="navbar-nav me-auto mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="listing.html">판매중</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="minting.html">민팅</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="manage.html">관리</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="box-body">
+            <!-- ✅ ERC-20 스킨 상점 -->
+            <h3 class="mt-4">🎲 스킨 상점 (ERC-20 주사위)</h3>
+            <div class="row">
+                <!-- 🔴 빨강 주사위 상품 -->
+                <div class="col-md-6 text-center">
+                    <img src="./images/red-dice.png" alt="Red Dice" class="img-fluid" style="max-width: 200px;">
+                    <h4>🔴 Red Dice</h4>
+                    <input type="text" id="redDiceAddress" class="form-control" placeholder="받을 지갑 주소 입력">
+                    <input type="number" id="redDiceAmount" class="form-control mt-2" value="1" min="1">
+                    <button class="btn btn-success mt-2" id="buyRedDice">🌟 발행하기</button>
+                </div>
+            
+                <!-- 🔵 파랑 주사위 상품 -->
+                <div class="col-md-6 text-center">
+                    <img src="./images/blue-dice.png" alt="Blue Dice" class="img-fluid" style="max-width: 200px;">
+                    <h4>🔵 Blue Dice</h4>
+                    <input type="text" id="blueDiceAddress" class="form-control" placeholder="받을 지갑 주소 입력">
+                    <input type="number" id="blueDiceAmount" class="form-control mt-2" value="1" min="1">
+                    <button class="btn btn-success mt-2" id="buyBlueDice">🌟 발행하기</button>
+                </div>
+            </div>
+
+            <!-- ✅ NFT 민팅 폼 -->
+            <h3 class="mt-4">특별한 스킨(NFT) 민팅</h3>
+            <div class="col-12">
+                <input type="text" class="form-control" id="recipientAddress" placeholder="NFT를 받을 지갑 주소 입력">
+            </div>
+
+            <div class="col-12 py-3 my-3">
+                <input type="text" class="form-control" id="nftName" placeholder="NFT 이름 입력">
+            </div>
+
+            <div class="col-12 py-3 my-3">
+                <textarea class="form-control" id="description" placeholder="NFT 설명 입력"></textarea>
+            </div>
+
+            <!-- 이미지 업로드 -->
+            <div class="col-12 py-3 my-3">
+                <div class="input-group input-group-sm">
+                    <input type="file" class="form-control" name="upload" id="upload">
+                    <button class="btn btn-primary" id="uploadButton">📤 이미지 업로드</button>
+                </div>
+            </div>
+
+            <div class="col-12 py-3 my-3">
+                <div class="form-control" id="result">IPFS 링크가 여기에 표시됩니다.</div>
+            </div>
+
+            <!-- NFT 민팅 버튼 -->
+            <div>
+                <button class="btn btn-danger" id="mintButton">🌟 NFT 민팅</button>
+            </div>
+
+            <!-- 상태 메시지 -->
+            <p id="status"></p>
+        </div>
+    </div>
+</main>
+
+
+<footer class="footer" style="margin-top: 30px">
+    <div>못생긴 고릴라 처럼 💙</div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<!-- Web3.js -->
+<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+<!-- Axios.js -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<!-- JS 코드 -->
+<script src="./js/minting.js"></script>
+
+</body>
+</html>
