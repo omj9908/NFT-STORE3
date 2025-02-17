@@ -1,7 +1,7 @@
 const contractAddress = "0x30c96c62a165769B1F6061a37cafBaE80D491513";
 const PINATA_JWT = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJiNTk2Y2MyYS01NDY2LTQyNGItYjRlMC03OTVkMTIzNGI5ODAiLCJlbWFpbCI6Im9tajk5MDhAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6IjhmNDJiOGI4ZjE3MDFkOGM2ZGVhIiwic2NvcGVkS2V5U2VjcmV0IjoiNWM3MjE5ZDJmN2U5MzA3MTFlYTA0NjQyNDM3OTBhZTU5MThmZTU4NDY4MGUxNGNmMmI5OWJkZmNiMGI5YTllMCIsImV4cCI6MTc3MDM1MzkwM30.qCRw21knqdTqWg6rTb3_ujnnOyl-Wz0FpOLoV7BN2B0"; // Pinata JWT (환경 변수 사용 권장)
-const redDiceTokenAddress = "0x7C41d6F3b713023cB4DB6e1b0252d363A5f20190"; // ✅ Red Dice 배포 주소
-const blueDiceTokenAddress = "0x5B57746983FFC7b8c9F2dDe55d32551C0D5f3c12"; // ✅ Blue Dice 배포 주소
+const redDiceTokenAddress = "0x775C2A4aA7D76502523e208D16424F804022945e"; // ✅ Red Dice 배포 주소
+const blueDiceTokenAddress = "0x00907BEf6775E0D721734861121896fc7b60b9fd"; // ✅ Blue Dice 배포 주소
 
 
 const contractABI = [
@@ -44,37 +44,31 @@ const contractABI = [
 ];
 
 const diceTokenABI = [
-  {
-      "inputs": [
-          { "internalType": "address", "name": "to", "type": "address" },
-          { "internalType": "uint256", "name": "amount", "type": "uint256" }
-      ],
-      "name": "mintRedDice",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-  },
-  {
-      "inputs": [
-          { "internalType": "address", "name": "to", "type": "address" },
-          { "internalType": "uint256", "name": "amount", "type": "uint256" }
-      ],
-      "name": "mintBlueDice",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-  },
-  {
-      "inputs": [],
-      "name": "getOwner",  // ✅ 추가된 getOwner 함수
-      "outputs": [
-          { "internalType": "address", "name": "", "type": "address" }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-  }
-];
-
+    {
+        "inputs": [
+            { "internalType": "address", "name": "to", "type": "address" },
+            { "internalType": "uint256", "name": "amount", "type": "uint256" }
+        ],
+        "name": "mintDice",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+        "name": "hasMinterRole",
+        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+        "name": "grantMinterRole",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+  ];
 
 let web3;
 let redDiceToken;
@@ -84,39 +78,33 @@ let nftContract;
 let currentAccount = null;
 
 async function connectWallet() {
-  if (!window.ethereum) {
-      alert("❌ MetaMask가 설치되지 않았습니다.");
-      return null;
-  }
+    if (!window.ethereum) {
+        alert("❌ MetaMask가 설치되지 않았습니다.");
+        return null;
+    }
 
-  try {
-      console.log("📌 MetaMask 로그인 요청...");
-      web3 = new Web3(window.ethereum);
+    try {
+        console.log("📌 MetaMask 로그인 요청...");
+        if (!web3) {
+            web3 = new Web3(window.ethereum); // web3 초기화
+        }
 
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
 
-      if (!accounts || accounts.length === 0) {
-          alert("❌ MetaMask 계정이 연결되지 않았습니다.");
-          return null;
-      }
+        if (!accounts || accounts.length === 0) {
+            alert("❌ MetaMask 계정이 연결되지 않았습니다.");
+            return null;
+        }
 
-      currentAccount = accounts[0];
+        currentAccount = accounts[0];
 
-      nftContract = new web3.eth.Contract(contractABI, contractAddress);
+        console.log(`✅ MetaMask 연결 완료! 선택된 계정: ${currentAccount}`);
 
-      // ✅ Red Dice & Blue Dice 토큰 컨트랙트 인스턴스 생성
-      redDiceToken = new web3.eth.Contract(diceTokenABI, redDiceTokenAddress);
-      blueDiceToken = new web3.eth.Contract(diceTokenABI, blueDiceTokenAddress);
-
-      console.log(`✅ MetaMask 연결 완료! 선택된 계정: ${currentAccount}`);
-      console.log("🔴 Red Dice Contract:", redDiceToken);
-      console.log("🔵 Blue Dice Contract:", blueDiceToken);
-
-      return currentAccount;
-  } catch (error) {
-      console.error("❌ MetaMask 연결 오류:", error);
-      return null;
-  }
+        return currentAccount;
+    } catch (error) {
+        console.error("❌ MetaMask 연결 오류:", error);
+        return null;
+    }
 }
 
 
@@ -191,153 +179,115 @@ async function uploadToIPFSWithMetadata(file, name, description) {
   }
 }
 
-async function mintSkin(skinType) {
-  if (!currentAccount) await connectWallet();
+async function checkMinterRole(account) {
+    if (!account) {
+        console.log("🔄 지갑 연결이 필요합니다. connectWallet() 실행 중...");
+        account = await connectWallet();
+        if (!account) {
+            console.error("❌ MINTER_ROLE 확인 실패: 계정이 설정되지 않음");
+            return;
+        }
+    }
 
-  let recipientAddress, skinAmount, tokenContract, mintFunction;
-  let button, tokenSymbol, tokenImage, tokenAddress;
+    try {
+        const redDiceToken = new web3.eth.Contract(diceTokenABI, redDiceTokenAddress);
+        const isMinter = await redDiceToken.methods.hasMinterRole(account).call();
 
-  if (skinType === 1) { // 🔴 Red Dice
-      recipientAddress = document.getElementById("redDiceAddress").value.trim();
-      skinAmount = parseInt(document.getElementById("redDiceAmount").value.trim());
-      button = document.getElementById("buyRedDice");
-      tokenContract = redDiceToken;
-      mintFunction = "mintRedDice"; 
-      tokenSymbol = "RED"; 
-      tokenAddress = redDiceTokenAddress; 
-      tokenImage = "https://gateway.pinata.cloud/ipfs/bafkreie3xkmzca5lms6432dizefa6ejonp34t47gpzjodgsemmrfu4a2aa"; // 🔴 Red Dice 이미지
-  } else if (skinType === 2) { // 🔵 Blue Dice
-      recipientAddress = document.getElementById("blueDiceAddress").value.trim();
-      skinAmount = parseInt(document.getElementById("blueDiceAmount").value.trim());
-      button = document.getElementById("buyBlueDice");
-      tokenContract = blueDiceToken;
-      mintFunction = "mintBlueDice"; 
-      tokenSymbol = "BLUE"; 
-      tokenAddress = blueDiceTokenAddress; 
-      tokenImage = "https://gateway.pinata.cloud/ipfs/bafybeigufd64xcwgnizcoaar3lqis3zh474pkrmz6fzrix6wcl667dei3e"; // 🔵 Blue Dice 이미지
-  } else {
-      console.error("❌ 잘못된 skinType 값:", skinType);
-      return;
-  }
+        console.log(`🔍 ${account}의 MINTER_ROLE 상태: ${isMinter}`);
 
-  console.log(`🎲 ERC-20 ${tokenSymbol} 발행 요청:
-      - 받는 주소: ${recipientAddress}
-      - 발행 수량: ${skinAmount}
-      - 컨트랙트 주소: ${tokenAddress}
-      - 심볼: ${tokenSymbol}
-      - 이미지: ${tokenImage}
-  `);
-
-  try {
-      console.log(`🚀 ERC-20 ${tokenSymbol} ${skinAmount}개 민팅 시작...`);
-
-      button.disabled = true;
-      button.innerText = "⏳ 발행 중...";
-
-      // ✅ ✅ ✅ `getOwner()` 함수 호출 (owner() → getOwner())
-      const contractOwner = await tokenContract.methods.getOwner().call();
-      console.log(`📌 [DEBUG] 컨트랙트 Owner: ${contractOwner}`);
-
-      const gasEstimate = await tokenContract.methods[mintFunction](recipientAddress, skinAmount).estimateGas({
-          from: currentAccount,
-      });
-
-      console.log(`⛽ [DEBUG] 예상 Gas 사용량: ${gasEstimate}`);
-
-      const tx = await tokenContract.methods[mintFunction](recipientAddress, skinAmount).send({
-          from: currentAccount,
-          gas: gasEstimate + 50000,
-          gasPrice: await web3.eth.getGasPrice()
-      });
-
-      console.log(`✅ ERC-20 ${tokenSymbol} 발행 성공! Tx: ${tx.transactionHash}`);
-      alert(`✅ ${skinAmount}개의 ${tokenSymbol}이(가) ${recipientAddress} 주소로 발행되었습니다!`);
-
-      // ✅ MetaMask에 자동 추가
-      await addTokenToMetaMask(tokenAddress, tokenSymbol, tokenImage);
-
-  } catch (error) {
-      console.error(`❌ ERC-20 ${tokenSymbol} 발행 오류:`, error);
-      alert(`❌ ${tokenSymbol} 발행 실패! MetaMask 로그를 확인하세요.`);
-  } finally {
-      button.disabled = false;
-      button.innerText = "🌟 발행하기";
-  }
+        if (!isMinter) {
+            throw new Error(`❌ ${account}는 MINTER_ROLE이 없습니다.`);
+        }
+    } catch (error) {
+        console.error("❌ 민팅 권한 확인 실패:", error);
+    }
 }
 
-async function mintSkin(skinType) {
-  if (!currentAccount) await connectWallet();
 
-  let recipientAddress, skinAmount, tokenContract, mintFunction;
-  let button, tokenSymbol, tokenImage, tokenAddress;
 
-  if (skinType === 1) { // 🔴 Red Dice
-      recipientAddress = document.getElementById("redDiceAddress").value.trim();
-      skinAmount = parseInt(document.getElementById("redDiceAmount").value.trim());
-      button = document.getElementById("buyRedDice");
-      tokenContract = redDiceToken;
-      mintFunction = "mintRedDice"; 
-      tokenSymbol = "RED"; 
-      tokenAddress = redDiceTokenAddress; 
-      tokenImage = "https://gateway.pinata.cloud/ipfs/bafkreie3xkmzca5lms6432dizefa6ejonp34t47gpzjodgsemmrfu4a2aa";
-  } else if (skinType === 2) { // 🔵 Blue Dice
-      recipientAddress = document.getElementById("blueDiceAddress").value.trim();
-      skinAmount = parseInt(document.getElementById("blueDiceAmount").value.trim());
-      button = document.getElementById("buyBlueDice");
-      tokenContract = blueDiceToken;
-      mintFunction = "mintBlueDice"; 
-      tokenSymbol = "BLUE"; 
-      tokenAddress = blueDiceTokenAddress; 
-      tokenImage = "https://gateway.pinata.cloud/ipfs/bafybeigufd64xcwgnizcoaar3lqis3zh474pkrmz6fzrix6wcl667dei3e";
-  } else {
-      console.error("❌ 잘못된 skinType 값:", skinType);
-      return;
-  }
+// ✅ MetaMask 연결 후 실행하여 현재 계정이 MINTER_ROLE을 가지고 있는지 확인
+checkMinterRole(currentAccount);
 
-  console.log(`🎲 ERC-20 ${tokenSymbol} 발행 요청:
-      - 받는 주소: ${recipientAddress}
-      - 발행 수량: ${skinAmount}
-      - 컨트랙트 주소: ${tokenAddress}
-      - 심볼: ${tokenSymbol}
-      - 이미지: ${tokenImage}
-  `);
+async function mintDiceToken(skinType) {
+    // ✅ web3가 초기화되지 않았다면 connectWallet 실행
+    if (!currentAccount) {
+        console.log("🔄 지갑 연결이 필요합니다. connectWallet() 실행 중...");
+        currentAccount = await connectWallet();
+        if (!currentAccount) {
+            console.error("❌ 지갑 연결 실패! 민팅을 중단합니다.");
+            return;
+        }
+    }
 
-  try {
-      console.log(`🚀 ERC-20 ${tokenSymbol} ${skinAmount}개 민팅 시작...`);
+    let recipientAddress, skinAmount, tokenContract, button, tokenSymbol, tokenImage, tokenAddress;
 
-      button.disabled = true;
-      button.innerText = "⏳ 발행 중...";
+    if (skinType === 1) { // 🔴 Red Dice
+        recipientAddress = document.getElementById("redDiceAddress").value.trim();
+        skinAmount = parseInt(document.getElementById("redDiceAmount").value.trim());
+        button = document.getElementById("buyRedDice");
+        tokenContract = redDiceToken;
+        tokenSymbol = "RED";
+        tokenAddress = redDiceTokenAddress;
+        tokenImage = "https://gateway.pinata.cloud/ipfs/bafkreie3xkmzca5lms6432dizefa6ejonp34t47gpzjodgsemmrfu4a2aa";
+    } else if (skinType === 2) { // 🔵 Blue Dice
+        recipientAddress = document.getElementById("blueDiceAddress").value.trim();
+        skinAmount = parseInt(document.getElementById("blueDiceAmount").value.trim());
+        button = document.getElementById("buyBlueDice");
+        tokenContract = blueDiceToken;
+        tokenSymbol = "BLUE";
+        tokenAddress = blueDiceTokenAddress;
+        tokenImage = "https://gateway.pinata.cloud/ipfs/bafybeigufd64xcwgnizcoaar3lqis3zh474pkrmz6fzrix6wcl667dei3e";
+    } else {
+        console.error("❌ 잘못된 skinType 값:", skinType);
+        return;
+    }
 
-      // ✅ ✅ ✅ `getOwner()` 함수 호출 (owner() → getOwner())
-      const contractOwner = await tokenContract.methods.getOwner().call();
-      console.log(`📌 [DEBUG] 컨트랙트 Owner: ${contractOwner}`);
+    // ✅ `tokenContract`가 정상적으로 초기화되었는지 확인
+    if (!tokenContract) {
+        console.error(`❌ ${tokenSymbol}의 tokenContract가 정의되지 않았습니다.`);
+        return;
+    }
 
-      const gasEstimate = await tokenContract.methods[mintFunction](recipientAddress, skinAmount).estimateGas({
-          from: currentAccount,
-      });
+    console.log(`🎲 ERC-20 ${tokenSymbol} 발행 요청:
+        - 받는 주소: ${recipientAddress}
+        - 발행 수량: ${skinAmount}
+        - 컨트랙트 주소: ${tokenAddress}
+        - 심볼: ${tokenSymbol}
+        - 이미지: ${tokenImage}
+    `);
 
-      console.log(`⛽ [DEBUG] 예상 Gas 사용량: ${gasEstimate}`);
+    try {
+        button.disabled = true;
+        button.innerText = "⏳ 발행 중...";
 
-      const tx = await tokenContract.methods[mintFunction](recipientAddress, skinAmount).send({
-          from: currentAccount,
-          gas: gasEstimate + 50000,
-          gasPrice: await web3.eth.getGasPrice()
-      });
+        // ✅ 현재 계정이 `MINTER_ROLE`을 가지고 있는지 확인
+        await checkMinterRole(currentAccount);
 
-      console.log(`✅ ERC-20 ${tokenSymbol} 발행 성공! Tx: ${tx.transactionHash}`);
-      alert(`✅ ${skinAmount}개의 ${tokenSymbol}이(가) ${recipientAddress} 주소로 발행되었습니다!`);
+        // ✅ 예상 가스량 계산
+        const gasEstimate = await tokenContract.methods.mintDice(recipientAddress, skinAmount).estimateGas({
+            from: currentAccount,
+        });
 
-      // ✅ MetaMask에 자동 추가
-      await addTokenToMetaMask(tokenAddress, tokenSymbol, tokenImage);
+        console.log(`⛽ [DEBUG] 예상 Gas 사용량: ${gasEstimate}`);
 
-  } catch (error) {
-      console.error(`❌ ERC-20 ${tokenSymbol} 발행 오류:`, error);
-      alert(`❌ ${tokenSymbol} 발행 실패! MetaMask 로그를 확인하세요.`);
-  } finally {
-      button.disabled = false;
-      button.innerText = "🌟 발행하기";
-  }
+        // ✅ 트랜잭션 실행
+        const tx = await tokenContract.methods.mintDice(recipientAddress, skinAmount).send({
+            from: currentAccount,
+            gas: gasEstimate + 50000,
+            gasPrice: await web3.eth.getGasPrice()
+        });
+
+        console.log(`✅ ERC-20 ${tokenSymbol} 발행 성공! Tx: ${tx.transactionHash}`);
+        alert(`✅ ${skinAmount}개의 ${tokenSymbol}이(가) ${recipientAddress} 주소로 발행되었습니다!`);
+    } catch (error) {
+        console.error(`❌ ERC-20 ${tokenSymbol} 발행 오류:`, error);
+        alert(`❌ ${tokenSymbol} 발행 실패! MetaMask 로그를 확인하세요.`);
+    } finally {
+        button.disabled = false;
+        button.innerText = "🌟 발행하기";
+    }
 }
+
 
 
 // ✅ ERC-20 스킨 발행 버튼 클릭 이벤트 추가
@@ -346,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (buyRedDiceButton) {
       buyRedDiceButton.addEventListener("click", async () => {
           console.log("✅ Red Dice 발행 버튼 클릭됨!");
-          await mintSkin(1); // 🔴 Red Dice (ERC-20)
+          await mintDiceToken(1); // 🔴 Red Dice (ERC-20)
       });
   } else {
       console.warn("⚠️ [Debug] Red Dice 발행 버튼을 찾을 수 없음!");
@@ -356,122 +306,129 @@ document.addEventListener("DOMContentLoaded", function () {
   if (buyBlueDiceButton) {
       buyBlueDiceButton.addEventListener("click", async () => {
           console.log("✅ Blue Dice 발행 버튼 클릭됨!");
-          await mintSkin(2); // 🔵 Blue Dice (ERC-20)
+          await mintDiceToken(2); // 🔵 Blue Dice (ERC-20)
       });
   } else {
       console.warn("⚠️ [Debug] Blue Dice 발행 버튼을 찾을 수 없음!");
   }
 });
 
+// ✅ MetaMask에 토큰 추가하는 함수
 async function addTokenToMetaMask(tokenAddress, tokenSymbol, tokenImage) {
-  console.log(`✅ [DEBUG] addTokenToMetaMask() 실행됨:
-      - tokenAddress: ${tokenAddress}
-      - tokenSymbol: ${tokenSymbol}
-      - tokenImage: ${tokenImage}
-  `);
+    try {
+        const wasAdded = await window.ethereum.request({
+            method: "wallet_watchAsset",
+            params: {
+                type: "ERC20",
+                options: {
+                    address: tokenAddress,
+                    symbol: tokenSymbol,
+                    decimals: 18,
+                    image: tokenImage,
+                },
+            },
+        });
 
-  try {
-      if (!tokenAddress || !tokenSymbol || !tokenImage) {
-          throw new Error(`토큰 정보가 유효하지 않습니다! tokenAddress=${tokenAddress}, tokenSymbol=${tokenSymbol}, tokenImage=${tokenImage}`);
-      }
+        if (wasAdded) {
+            console.log(`✅ MetaMask에 ${tokenSymbol} 추가 완료!`);
+        } else {
+            console.log(`⚠️ MetaMask에 ${tokenSymbol} 추가 거부됨!`);
+        }
+    } catch (error) {
+        console.error(`❌ MetaMask에 ${tokenSymbol} 추가 오류:`, error);
+    }
+}
 
-      const wasAdded = await window.ethereum.request({
-          method: "wallet_watchAsset",
-          params: {
-              type: "ERC20",
-              options: {
-                  address: tokenAddress,
-                  symbol: tokenSymbol,
-                  decimals: 18,
-                  image: tokenImage,
-              },
-          },
-      });
+async function grantMinterRole() {
+    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+    const ownerAccount = accounts[0];
 
-      if (wasAdded) {
-          console.log(`✅ MetaMask에 ${tokenSymbol} 추가 완료!`);
-      } else {
-          console.log(`⚠️ MetaMask에 ${tokenSymbol} 추가 거부됨!`);
-      }
-  } catch (error) {
-      console.error(`❌ MetaMask에 ${tokenSymbol} 추가 오류:`, error);
-  }
+    console.log("배포자 계정:", ownerAccount);
+
+    try {
+        const redDiceToken = new web3.eth.Contract(diceTokenABI, redDiceTokenAddress);
+        const minterAccount = "0x2a4Cb354A79DfE8b381560715cc3615033e918CB"; // 민팅 계정 수정
+
+        console.log(`🎯 MINTER_ROLE을 ${minterAccount}에 부여 중...`);
+
+        const hasAdminRole = await redDiceToken.methods.hasRole(
+            web3.utils.keccak256("DEFAULT_ADMIN_ROLE"),
+            ownerAccount
+        ).call();
+
+        if (!hasAdminRole) {
+            throw new Error(`❌ ${ownerAccount}는 ADMIN_ROLE이 없음. MINTER_ROLE을 부여할 수 없습니다.`);
+        }
+
+        await redDiceToken.methods.grantRole(
+            web3.utils.keccak256("MINTER_ROLE"),
+            minterAccount
+        ).send({ from: ownerAccount });
+
+        console.log(`✅ ${minterAccount}에 MINTER_ROLE 부여 완료!`);
+    } catch (error) {
+        console.error("❌ MINTER_ROLE 부여 오류:", error);
+    }
 }
 
 
+// ✅ 페이지 로드 후 버튼 이벤트 리스너 등록
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("✅ [Debug] 문서 로드 완료!");
+    console.log("✅ [Debug] 문서 로드 완료!");
 
-  // ✅ NFT 이미지 업로드 버튼 클릭 이벤트 추가
-  const uploadButton = document.getElementById("uploadButton");
-  if (uploadButton) {
-      uploadButton.addEventListener("click", async () => {
-          console.log("✅ [Debug] 업로드 버튼 클릭됨!");
+    // ✅ 버튼 ID 및 실행할 함수 매핑 (이벤트 리스너 최적화)
+    const buttonConfig = [
+        { id: "uploadButton", handler: async () => {
+            console.log("✅ [Debug] 업로드 버튼 클릭됨!");
 
-          const fileInput = document.getElementById("upload");
-          if (!fileInput || fileInput.files.length === 0) {
-              alert("⚠️ 파일을 선택하세요.");
-              console.log("❌ [Debug] 파일이 선택되지 않음.");
-              return;
-          }
+            const fileInput = document.getElementById("upload");
+            if (!fileInput || fileInput.files.length === 0) {
+                alert("⚠️ 파일을 선택하세요.");
+                console.log("❌ [Debug] 파일이 선택되지 않음.");
+                return;
+            }
 
-          console.log("📌 [Debug] 업로드할 파일:", fileInput.files[0]);
+            console.log("📌 [Debug] 업로드할 파일:", fileInput.files[0]);
 
-          const name = document.getElementById("nftName").value.trim();
-          const description = document.getElementById("description").value.trim();
+            const name = document.getElementById("nftName").value.trim();
+            const description = document.getElementById("description").value.trim();
 
-          document.getElementById("result").innerText = "이미지 및 메타데이터 업로드 중...";
+            document.getElementById("result").innerText = "이미지 및 메타데이터 업로드 중...";
 
-          const metadataURI = await uploadToIPFSWithMetadata(fileInput.files[0], name, description);
+            const metadataURI = await uploadToIPFSWithMetadata(fileInput.files[0], name, description);
 
-          if (metadataURI) {
-              console.log("✅ [Debug] 업로드 완료! 메타데이터 URI:", metadataURI);
-              document.getElementById("result").innerText = `✅ 업로드 완료! IPFS 링크: ${metadataURI}`;
-          } else {
-              console.log("❌ [Debug] 업로드 실패!");
-              document.getElementById("result").innerText = "❌ 업로드 실패!";
-          }
-      });
-  } else {
-      console.warn("⚠️ [Debug] 업로드 버튼을 찾을 수 없음!");
-  }
+            if (metadataURI) {
+                console.log("✅ [Debug] 업로드 완료! 메타데이터 URI:", metadataURI);
+                document.getElementById("result").innerText = `✅ 업로드 완료! IPFS 링크: ${metadataURI}`;
+            } else {
+                console.log("❌ [Debug] 업로드 실패!");
+                document.getElementById("result").innerText = "❌ 업로드 실패!";
+            }
+        }},
 
-  // ✅ NFT 민팅 버튼 클릭 이벤트 추가
-  const mintButton = document.getElementById("mintButton");
-  if (mintButton) {
-      mintButton.addEventListener("click", async () => {
-          console.log("✅ NFT 민팅 버튼 클릭됨!");
-          await mintNFT();
-      });
-  } else {
-      console.warn("⚠️ [Debug] NFT 민팅 버튼을 찾을 수 없음!");
-  }
+        { id: "mintButton", handler: async () => {
+            console.log("✅ NFT 민팅 버튼 클릭됨!");
+            await mintNFT();
+        }},
 
-  // ✅ ERC-20 스킨(주사위) 발행 버튼 클릭 이벤트 추가 (중복 방지)
-  const buyRedDiceButton = document.getElementById("buyRedDice");
-  if (buyRedDiceButton) {
-      buyRedDiceButton.replaceWith(buyRedDiceButton.cloneNode(true)); // 기존 이벤트 제거
-      document.getElementById("buyRedDice").addEventListener("click", async () => {
-          console.log("✅ Red Dice 발행 버튼 클릭됨!");
-          await mintSkin(1); // Red Dice 발행
-          await addTokenToMetaMask(); // 🔥 MetaMask에 SKIN 추가
-      });
-  } else {
-      console.warn("⚠️ [Debug] Red Dice 발행 버튼을 찾을 수 없음!");
-  }
+        { id: "buyRedDice", handler: async () => {
+            console.log("✅ Red Dice 발행 버튼 클릭됨!");
+            await mintDiceToken(1);
+        }},
 
-  const buyBlueDiceButton = document.getElementById("buyBlueDice");
-  if (buyBlueDiceButton) {
-      buyBlueDiceButton.replaceWith(buyBlueDiceButton.cloneNode(true)); // 기존 이벤트 제거
-      document.getElementById("buyBlueDice").addEventListener("click", async () => {
-          console.log("✅ Blue Dice 발행 버튼 클릭됨!");
-          await mintSkin(2); // Blue Dice 발행
-          await addTokenToMetaMask(); // 🔥 MetaMask에 SKIN 추가
-      });
-  } else {
-      console.warn("⚠️ [Debug] Blue Dice 발행 버튼을 찾을 수 없음!");
-  }
+        { id: "buyBlueDice", handler: async () => {
+            console.log("✅ Blue Dice 발행 버튼 클릭됨!");
+            await mintDiceToken(2);
+        }}
+    ];
 
-  // ✅ ERC-20 잔액 조회 버튼 이벤트 추가 (중복 방지)
+    // ✅ 버튼 이벤트 리스너 자동 등록
+    buttonConfig.forEach(({ id, handler }) => {
+        const button = document.getElementById(id);
+        if (button) {
+            button.addEventListener("click", handler);
+        } else {
+            console.warn(`⚠️ [Debug] 버튼을 찾을 수 없음: ${id}`);
+        }
+    });
 });
-

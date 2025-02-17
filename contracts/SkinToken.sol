@@ -2,48 +2,53 @@
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
- * 🔴 Red Dice (ERC-20 토큰)
+ * 🔥 ERC-20 주사위 토큰 (공통 부모 컨트랙트)
  */
-contract RedDiceToken is ERC20, Ownable {
-    event MintRedDice(address indexed recipient, uint256 amount);
+contract DiceToken is ERC20, AccessControl {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    constructor() ERC20("Red Dice", "RED") Ownable() {
-        _mint(msg.sender, 10000 * 10 ** decimals());
+    event MintDice(address indexed recipient, uint256 amount);
+
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender); // 배포자에게 ADMIN 권한 부여
+        _setupRole(MINTER_ROLE, msg.sender); // 배포자에게 MINTER_ROLE 부여
+        _mint(msg.sender, 10000 * 10 ** decimals()); // 초기 공급량
     }
 
-    function mintRedDice(address to, uint256 amount) public onlyOwner {
+    function mintDice(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         require(to != address(0), "Invalid address");
         require(amount > 0, "Amount must be greater than 0");
 
         _mint(to, amount);
-        emit MintRedDice(to, amount);
+        emit MintDice(to, amount);
     }
 
-    // ✅ [수정] owner()가 아니라 getOwner()를 추가해야 외부에서 호출 가능
-    function getOwner() external view returns (address) {
-        return owner();
+    function grantMinterRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        grantRole(MINTER_ROLE, account);
+    }
+
+    function revokeMinterRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        revokeRole(MINTER_ROLE, account);
+    }
+
+    function hasMinterRole(address account) external view returns (bool) {
+        return hasRole(MINTER_ROLE, account);
     }
 }
 
-contract BlueDiceToken is ERC20, Ownable {
-    event MintBlueDice(address indexed recipient, uint256 amount);
+/**
+ * 🔴 Red Dice Token (ERC-20)
+ */
+contract RedDiceToken is DiceToken {
+    constructor() DiceToken("Red Dice", "RED") {}
+}
 
-    constructor() ERC20("Blue Dice", "BLUE") Ownable() {
-        _mint(msg.sender, 10000 * 10 ** decimals());
-    }
-
-    function mintBlueDice(address to, uint256 amount) public onlyOwner {
-        require(to != address(0), "Invalid address");
-        require(amount > 0, "Amount must be greater than 0");
-
-        _mint(to, amount);
-        emit MintBlueDice(to, amount);
-    }
-
-    function getOwner() external view returns (address) {
-        return owner();
-    }
+/**
+ * 🔵 Blue Dice Token (ERC-20)
+ */
+contract BlueDiceToken is DiceToken {
+    constructor() DiceToken("Blue Dice", "BLUE") {}
 }

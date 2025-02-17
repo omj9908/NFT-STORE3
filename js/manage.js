@@ -1,6 +1,6 @@
 const contractAddress = "0x30c96c62a165769B1F6061a37cafBaE80D491513"; 
-const redDiceTokenAddress = "0x7C41d6F3b713023cB4DB6e1b0252d363A5f20190"; // 🔴 Red Dice 배포 주소
-const blueDiceTokenAddress = "0x5B57746983FFC7b8c9F2dDe55d32551C0D5f3c12"; // 🔵 Blue Dice 배포 주소
+const redDiceTokenAddress = "0x7B831b7c38B58dDaB0271c66aA1f825C17834444"; // 🔴 Red Dice 배포 주소
+const blueDiceTokenAddress = "0x05475920d44DBeA7937dBDa4805A99fFCfDfF699"; // 🔵 Blue Dice 배포 주소
 
 
 const contractABI = [
